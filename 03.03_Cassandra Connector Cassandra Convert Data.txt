@@ -1,0 +1,34 @@
+CREATE TABLE killr_video.videos_by_year_title (
+    added_year INT,
+    title TEXT,
+    video_id TIMEUUID,
+    added_date TIMESTAMP,
+    avg_rating FLOAT,
+    description TEXT,
+    user_id UUID,
+    PRIMARY KEY (added_year, title, video_id)
+);
+case class Record(title: String, description: String)
+
+sc.cassandraTable("killr_video", "videos_by_year_title")
+.select("title", "description")
+.where("added_year = 2009")
+.as((t: String, d: String) => new Record(t, d))
+.filter(t => t.description.toLowerCase.contains("dog"))
+.map(t => "title: %s \n description: %s \n".format(t.title, t.description))
+.collect
+.foreach(println)
+
+val filmsOfYear = sc.cassandraTable[(String, Option[Float])]("killr_video", "videos_by_year_title")
+.select("title", "avg_rating")
+.where("added_year = 2014")
+
+filmsOfYear.cache()
+
+val totalCount = filmsOfYear.count
+
+val countWithEmptyRating = filmsOfYear.filter(t => t._2.isEmpty).count
+
+val percentageFilmsWithEmptyRating = (100.0 * countWithEmptyRating)/totalCount
+
+println("Percentage films with empty rating is: %.2f%%".format(percentageFilmsWithEmptyRating))

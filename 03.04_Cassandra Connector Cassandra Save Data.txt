@@ -1,0 +1,67 @@
+CREATE TABLE killr_video.videos_by_year_title (
+    added_year INT,
+    title TEXT,
+    video_id TIMEUUID,
+    added_date TIMESTAMP,
+    avg_rating FLOAT,
+    description TEXT,
+    user_id UUID,
+    PRIMARY KEY (added_year, title, video_id)
+);
+val videosFrom2014 = sc
+.cassandraTable("killr_video", "videos_by_year_title")
+.select("title", "added_year", "avg_rating")
+.where("added_year = 2014")
+
+videosFrom2014.cache()
+
+
+
+def getFromOption(value: Option[Float]) : Float = {
+    if (value.isEmpty) 0
+    else value.get
+} 
+
+val worst2014Videos = videosFrom2014.filter(row => getFromOption(row.getFloatOption("avg_rating")) <= 4)
+
+val countOfWorstVideos = worst2014Videos.count
+
+println("Count of worst videos is a %d".format(countOfWorstVideos))
+
+case class WorstVideo(title: String, year: Int, rating: Float)
+
+worst2014Videos.collect.foreach(println)
+
+val mappedWorst2014Videos = worst2014Videos.map(r => WorstVideo(r.getString("title"), r.getInt("added_year"), getFromOption(r.getFloatOption("avg_rating"))))
+
+mappedWorst2014Videos.collect.foreach(println)
+
+mappedWorst2014Videos.saveAsCassandraTable("killr_video", "worst_2014_videos", SomeColumns("title", "year", "rating"))
+
+%%showschema killr_video.worst_2014_videos
+
+val readed = sc
+.cassandraTable("killr_video", "worst_2014_videos")
+.collect
+
+import com.datastax.spark.connector.cql._;
+import com.datastax.spark.connector.types._;
+
+val tableDef = TableDef( "killr_video", "worst_2014_videos_ex",
+                         Seq(new ColumnDef("title", PartitionKeyColumn, TextType)),
+                         Seq(new ColumnDef("rating", ClusteringColumn(0), FloatType)),
+                         Seq(new ColumnDef("year", RegularColumn, IntType))
+                                             
+)
+
+val readedRDD = sc.parallelize(readed)
+
+readedRDD.saveAsCassandraTableEx(tableDef)
+
+%%showschema killr_video.worst_2014_videos_ex
+
+sc
+.cassandraTable("killr_video", "worst_2014_videos_ex")
+.collect.foreach(println)
+
+

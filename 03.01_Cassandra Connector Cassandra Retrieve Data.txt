@@ -1,0 +1,24 @@
+CREATE TABLE killr_video.videos_by_year_title (
+    added_year INT,
+    title TEXT,
+    video_id TIMEUUID,
+    added_date TIMESTAMP,
+    avg_rating FLOAT,
+    description TEXT,
+    user_id UUID,
+    PRIMARY KEY (added_year, title, video_id)
+);
+sc.cassandraTable("killr_video", "videos_by_year_title")
+.select("title", "added_year")
+.where("title > 'T' AND added_year = 2015")
+.limit(5)
+.collect
+.foreach(println)
+
+sc.cassandraTable("killr_video", "videos_by_year_title")
+.filter(r => r.getString("title").charAt(0) == 'T' && r.getInt("added_year") == 2015)
+.map(r => (r.getString("title"), r.getInt("added_year")))
+.take(5)
+.foreach(println)
+
+

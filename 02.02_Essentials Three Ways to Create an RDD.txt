@@ -1,0 +1,38 @@
+CREATE TABLE killr_video.videos (
+   video_id TIMEUUID,
+   avg_rating FLOAT,
+   description TEXT,
+   genres SET<TEXT>,
+   mpaa_rating TEXT,
+   release_date TIMESTAMP,
+   release_year INT,
+   title TEXT,
+   user_id UUID,
+   PRIMARY KEY (video_id)
+);video_id, title, yearWinnie the Pooh
+The Tigger Movie
+Pirates of the Caribbean
+Apollo 13
+Mallcop
+Mockingjay - Part 1
+The Good Dinosaur
+Lava
+The Peanuts Movie
+val movies = List("Winnie the Pooh", "The Tigger Movie", "Pirates of the Caribbean", "Apollo 13", "Mallcop", "Mockingjay - Part 1", "The Good Dinosaur", "Lava", "The Peanuts Movie")
+
+val moviesRDD = sc.parallelize(movies)
+
+moviesRDD.take(3).foreach(println(_))
+
+val table = sc.cassandraTable("killr_video", "videos")
+val first = table.take(1)
+println(first)
+
+val csvArray = sc.textFile("file:///root/data/video-years.csv").map(line => line.split(",") )
+val csvRDD = csvArray collect { case Array(video_id: String, title: String, year: String) => (video_id,title,year.toInt) }
+
+
+
+csvRDD.filter{ case (video_id, title, year) => year >= 2002 }.collect().foreach(println)
+
+

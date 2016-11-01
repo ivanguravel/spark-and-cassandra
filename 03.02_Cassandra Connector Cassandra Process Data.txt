@@ -1,0 +1,33 @@
+CREATE TABLE killr_video.videos (
+   video_id TIMEUUID,
+   avg_rating FLOAT,
+   description TEXT,
+   genres SET<TEXT>,
+   mpaa_rating TEXT,
+   release_date TIMESTAMP,
+   release_year INT,
+   title TEXT,
+   user_id UUID,
+   PRIMARY KEY (video_id)
+);Title: The Lego Movie                Year: 2014
+Title: How to Train Your Dragon 2    Year: 2014
+Title: The Book of Life              Year: 2014
+.
+.
+.
+sc.cassandraTable("killr_video", "videos")
+.filter(row => row.getInt("release_year") == 2014 && row.getSet[String]("genres").contains("Animation"))
+.map{row => "Title: " + row.getString("title") + "\t" + "Year: " + row.getString("release_year")}
+.collect
+.foreach(println)
+
+val videosTable = sc.cassandraTable("killr_video", "videos")
+val totalRecordsOfFilms = videosTable.count()
+val speacialRatedFilmsCount = videosTable
+.filter(row => row.getString("mpaa_rating").equalsIgnoreCase("G") 
+        )
+.count()
+val persentage: Double = (speacialRatedFilmsCount * 100) / totalRecordsOfFilms
+println("Persenge of special are: " + persentage + " %")
+
+

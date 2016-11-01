@@ -1,0 +1,15 @@
+Winnie the Pooh
+The Tigger MovieThe Tigger Movie
+Pirates
+val jimsMovies = sc.textFile("file:///root/data/jims-favorite-movies.csv")
+val janeMovies = sc.textFile("file:///root/data/janes-favorite-movies.csv")
+jimsMovies.cache()
+janeMovies.cache()
+
+jimsMovies.intersection(janeMovies).collect().foreach(println(_))
+
+jimsMovies.union(janeMovies).distinct.collect().foreach(println(_))
+
+janeMovies.subtract(jimsMovies).collect().foreach(println(_))
+
+
